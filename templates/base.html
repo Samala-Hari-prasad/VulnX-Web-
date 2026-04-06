@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VulnX Web - Intelligent Vulnerability Scanner</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="ascii-logo">
+ __  __     __  __     __         __   __     __  __    
+/\ \/\ \   /\ \/\ \   /\ \       /\ "-.\ \   /\_\_\_\   
+\ \ \_\ \  \ \ \_\ \  \ \ \____  \ \ \-.  \  \/_/\_\/_  
+ \ \_____\  \ \_____\  \ \_____\  \ \_\\"\_\   /\_\/\_\ 
+  \/_____/   \/_____/   \/_____/   \/_/ \/_/   \/_/\/_/ 
+                                                          
+        </div>
+        
+        <nav>
+            <div class="brand">
+                <a href="{% url 'dashboard:home' %}" style="margin-left: 0;">VulnX Web Dashboard</a>
+            </div>
+            <div class="user-actions">
+                {% if user.is_authenticated %}
+                    <span>Logged in as <b>{{ user.username }}</b></span>
+                    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn" style="border:none; padding:0; margin-left: 20px;">[ Logout ]</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'users:login' %}">[ Login ]</a>
+                    <a href="{% url 'users:register' %}">[ Register ]</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="card" style="border-color: var(--neon-blue); color: var(--neon-blue);">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

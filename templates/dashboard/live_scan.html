@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Monitoring Target: <span style="color: var(--neon-blue);">{{ scan.target_url }}</span></h2>
+        <span id="scan-status-badge" class="badge badge-{{ scan.status }}">{{ scan.status }}</span>
+    </div>
+
+    <div class="stat-grid">
+        <div class="card stat-card">
+            <div style="color: var(--text-muted); font-size: 14px; text-transform: uppercase;">URLs Discovered</div>
+            <div class="stat-value" id="stat-urls">{{ scan.urls_scanned }}</div>
+        </div>
+        <div class="card stat-card">
+            <div style="color: var(--text-muted); font-size: 14px; text-transform: uppercase;">Payloads Sent</div>
+            <div class="stat-value" id="stat-reqs">{{ scan.requests_sent }}</div>
+        </div>
+        <div class="card stat-card" style="border-color: var(--neon-red);">
+            <div style="color: var(--neon-red); font-size: 14px; text-transform: uppercase;">Vulnerabilities Found</div>
+            <div class="stat-value danger" id="stat-vulns">0</div>
+        </div>
+    </div>
+
+    <div id="scanner-line" class="scanner-indicator" style="display: {% if scan.status == 'COMPLETED' or scan.status == 'FAILED' %}none{% else %}block{% endif %};"></div>
+
+    <div class="card">
+        <h3>Live Activity Feed</h3>
+        <div class="log-box" id="live-log">
+            <div class="log-entry">> Initializing scan on {{ scan.target_url }}...</div>
+            <div class="log-entry">> Awaiting intelligence...</div>
+        </div>
+    </div>
+
+    <div style="text-align: right; margin-top: 20px;">
+        <a href="{% url 'dashboard:scan_results' scan.id %}" id="results-btn" class="btn btn-danger" style="display: {% if scan.status == 'COMPLETED' %}inline-block{% else %}none{% endif %};">[ VIEW DETAILED RESULTS ]</a>
+    </div>
+
+</div>
+
+<script>
+    const scanId = "{{ scan.id }}";
+    const statusBadge = document.getElementById('scan-status-badge');
+    const statUrls = document.getElementById('stat-urls');
+    const statReqs = document.getElementById('stat-reqs');
+    const statVulns = document.getElementById('stat-vulns');
+    const liveLog = document.getElementById('live-log');
+    const scannerLine = document.getElementById('scanner-line');
+    const resultsBtn = document.getElementById('results-btn');
+
+    let processedVulns = 0;
+
+    function pollStatus() {
+        fetch(`/api/scan/${scanId}/status/`)
+            .then(res => res.json())
+            .then(data => {
+                // Update stats
+                statUrls.innerText = data.urls_scanned;
+                statReqs.innerText = data.requests_sent;
+                statVulns.innerText = data.vulnerabilities_count;
+                
+                // Update badge
+                statusBadge.innerText = data.status;
+                statusBadge.className = `badge badge-${data.status}`;
+
+                // New logic to add vulnerabilities to log
+                if (data.vulnerabilities_count > processedVulns && data.recent_vulnerabilities) {
+                    const newVulns = data.recent_vulnerabilities.slice(processedVulns);
+                    newVulns.forEach(v => {
+                        const d = document.createElement('div');
+                        d.className = 'log-entry';
+                        d.style.color = "var(--neon-red)";
+                        d.innerHTML = `> [${v.severity}] ${v.type} IDENTIFIED AT: ${v.url} [Param: ${v.parameter}]`;
+                        liveLog.appendChild(d);
+                    });
+                    processedVulns = data.vulnerabilities_count;
+                    liveLog.scrollTop = liveLog.scrollHeight;
+                }
+
+                // Finish condition
+                if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+                    scannerLine.style.display = 'none';
+                    resultsBtn.style.display = 'inline-block';
+                    const finLog = document.createElement('div');
+                    finLog.className = 'log-entry';
+                    finLog.innerHTML = `> SCAN ${data.status}. EXPORT READY.`;
+                    liveLog.appendChild(finLog);
+                    liveLog.scrollTop = liveLog.scrollHeight;
+                } else {
+                    // Update log randomly for requests visual effect (only if still running)
+                    const r = document.createElement('div');
+                    r.className = 'log-entry';
+                    r.style.color = "#555";
+                    r.innerHTML = `> Request dispatched... [Count: ${data.requests_sent}]`;
+                    liveLog.appendChild(r);
+                    liveLog.scrollTop = liveLog.scrollHeight;
+                    
+                    // Poll again
+                    setTimeout(pollStatus, 2000);
+                }
+            })
+            .catch(err => {
+                console.error("Polling error:", err);
+                setTimeout(pollStatus, 5000);
+            });
+    }
+
+    if ("{{ scan.status }}" !== "COMPLETED" && "{{ scan.status }}" !== "FAILED") {
+        setTimeout(pollStatus, 2000);
+    }
+</script>
+{% endblock %}

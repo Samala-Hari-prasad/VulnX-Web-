@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2>Target: <span style="color: var(--neon-blue);">{{ scan.target_url }}</span></h2>
+        <p style="color: var(--text-muted); margin: 0;">Scan Duration: {{ scan.start_time|date:"Y-m-d H:i" }} - {% if scan.end_time %}{{ scan.end_time|date:"Y-m-d H:i" }}{% else %}Running{% endif %}</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'dashboard:export_report' scan.id %}?format=json" class="btn" target="_blank">[ Export JSON ]</a>
+        <a href="{% url 'dashboard:export_report' scan.id %}?format=html" class="btn" target="_blank">[ HTML Report ]</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 20px;">
+    <h3>Intelligence Filtering</h3>
+    <form method="GET" style="display: flex; gap: 20px; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Severity</label>
+            <select name="severity" class="form-control" style="width: 200px;">
+                <option value="">ALL</option>
+                <option value="HIGH">HIGH RISK</option>
+                <option value="MEDIUM">MEDIUM RISK</option>
+                <option value="LOW">LOW RISK</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Vulnerability Type</label>
+            <input type="text" name="type" class="form-control" placeholder="e.g. SQLi" value="{{ request.GET.type }}">
+        </div>
+        <button type="submit" class="btn">[ APPLY FILTERS ]</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Identified Vulnerabilities ({{ vulnerabilities|length }})</h3>
+    {% if vulnerabilities %}
+        <table style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Type</th>
+                    <th>URL</th>
+                    <th>Parameter</th>
+                    <th>Payload Sent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vulnerabilities %}
+                <tr>
+                    <td><span class="badge badge-{{ v.severity }}">{{ v.severity }}</span></td>
+                    <td style="font-weight: bold; color: var(--text-main);">{{ v.type }}</td>
+                    <td style="word-break: break-all; max-width: 300px; color: var(--neon-blue);">{{ v.url }}</td>
+                    <td style="color: var(--neon-yellow);">{{ v.parameter|default:"-" }}</td>
+                    <td style="font-family: monospace; font-size: 12px; color: var(--text-muted); word-break: break-all;">{{ v.payload|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--neon-green); border: 1px dashed var(--neon-green); margin-top: 20px; font-weight: bold;">
+            NO VULNERABILITIES DETECTED.<br>TARGET APPEARS SECURE.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <h2>Login to VulnX</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn" style="width: 100%; margin-top: 15px;">Login System</button>
+    </form>
+    <p style="margin-top: 15px; text-align: center;">
+        <small>Need an account? <a href="{% url 'users:register' %}" style="color: var(--neon-blue);">Register</a></small>
+    </p>
+</div>
+{% endblock %}

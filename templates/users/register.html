@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <h2>Register New Operative</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn" style="width: 100%; margin-top: 15px;">Initialize Account</button>
+    </form>
+    <p style="margin-top: 15px; text-align: center;">
+        <small>Already have access? <a href="{% url 'users:login' %}" style="color: var(--neon-blue);">Login</a></small>
+    </p>
+</div>
+{% endblock %}

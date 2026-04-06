@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+    
+    <!-- New Scan Panel -->
+    <div class="card">
+        <h3>Initiate New Scan</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Target URL (Must include http/https)</label>
+                <input type="url" name="target_url" class="form-control" required placeholder="https://example.com" value="http://127.0.0.1:8000">
+            </div>
+            
+            <div class="form-group">
+                <label>Scan Depth Level</label>
+                <select name="depth" class="form-control">
+                    <option value="1">Level 1 (Quick pass)</option>
+                    <option value="2" selected>Level 2 (Standard)</option>
+                    <option value="3">Level 3 (Deep scan)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Concurrent Threads</label>
+                <input type="number" name="threads" class="form-control" value="5" min="1" max="20">
+            </div>
+            
+            <button type="submit" class="btn btn-danger" style="width: 100%; margin-top: 20px;">[ EXECUTE SCAN ]</button>
+        </form>
+    </div>
+
+    <!-- Scan History Panel -->
+    <div class="card">
+        <h3>Scan History</h3>
+        {% if scans %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Target</th>
+                        <th>Started</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scan in scans %}
+                    <tr>
+                        <td style="color: var(--neon-blue);">{{ scan.target_url }}</td>
+                        <td>{{ scan.start_time|date:"Y-m-d H:i" }}</td>
+                        <td><span class="badge badge-{{ scan.status }}">{{ scan.status }}</span></td>
+                        <td>
+                            {% if scan.status == 'RUNNING' or scan.status == 'PENDING' %}
+                                <a href="{% url 'dashboard:scan_live' scan.id %}" class="btn" style="padding: 5px 10px; font-size: 12px;">Live View</a>
+                            {% else %}
+                                <a href="{% url 'dashboard:scan_results' scan.id %}" class="btn" style="padding: 5px 10px; font-size: 12px;">Results</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="color: var(--text-muted);">No logs found. Awaiting directives.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
